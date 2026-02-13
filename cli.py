@@ -24,6 +24,9 @@ def scan(
 ):
     """Scan Python source for boundary conditions and find uncovered ones."""
     if src.is_file():
+        if src.suffix != ".py":
+            typer.echo(f"Error: {src} is not a Python file", err=True)
+            raise typer.Exit(1)
         boundaries = extract_boundaries(src.read_text("utf-8"), str(src))
     elif src.is_dir():
         boundaries = scan_path(src)
@@ -31,7 +34,11 @@ def scan(
         typer.echo(f"Error: {src} not found", err=True)
         raise typer.Exit(1)
 
+    if tests and not tests.exists():
+        typer.echo(f"Error: test path {tests} not found", err=True)
+        raise typer.Exit(1)
     test_values = scan_tests(tests) if tests else set()
+
     uncovered = find_uncovered(boundaries, test_values) if test_values else boundaries
 
     if as_json:

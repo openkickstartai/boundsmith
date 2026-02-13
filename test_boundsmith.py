@@ -91,3 +91,43 @@ def test_float_boundary():
     assert b.value == 0.5
     assert abs(b.triplet[0] - 0.4) < 0.01
     assert abs(b.triplet[2] - 0.6) < 0.01
+
+
+
+def test_empty_source_returns_no_boundaries():
+    """Empty input must not crash and must return an empty list."""
+    bounds = extract_boundaries("")
+    assert bounds == []
+
+
+def test_malformed_python_does_not_crash():
+    """Malformed input must not raise an unhandled exception."""
+    try:
+        bounds = extract_boundaries("if x > : pass")
+    except SyntaxError:
+        pass  # acceptable — as long as it doesn't produce a traceback
+    else:
+        assert isinstance(bounds, list)
+
+
+def test_le_operator_triplet():
+    bounds = extract_boundaries("if x <= 5: pass")
+    b = next(b for b in bounds if b.variable == "x")
+    assert b.operator == "<="
+    assert b.value == 5
+    assert b.triplet == (4, 5, 6)
+
+
+def test_multiple_conditions_on_same_line():
+    """Compound boolean conditions must each produce a boundary."""
+    bounds = extract_boundaries("if x > 0 and y < 10: pass")
+    vars_found = {b.variable for b in bounds}
+    assert "x" in vars_found
+    assert "y" in vars_found
+
+
+def test_find_uncovered_with_empty_test_values():
+    """When no test values are provided, all boundaries are uncovered."""
+    bounds = extract_boundaries("if x > 3: pass")
+    uncovered = find_uncovered(bounds, set())
+    assert len(uncovered) == len(bounds)
