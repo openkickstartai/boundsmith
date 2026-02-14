@@ -38,6 +38,27 @@ python cli.py scan src/ --tests tests/ --generate test_boundaries.py
 python cli.py scan src/ --tests tests/ --json
 ```
 
+### SARIF output for GitHub Code Scanning
+
+```bash
+python cli.py scan src/ --format sarif -o report.sarif
+```
+
+Upload to GitHub Code Scanning:
+
+```bash
+gzip report.sarif
+gh api \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  "/repos/{owner}/{repo}/code-scanning/sarifs" \
+  -f "commit_sha=$(git rev-parse HEAD)" \
+  -f "ref=$(git symbolic-ref HEAD)" \
+  -f "sarif=@report.sarif.gz" \
+  -f "tool_name=BoundSmith"
+```
+
+
 ## What It Finds
 
 | Source Code | Boundary Triplet | What To Test |
